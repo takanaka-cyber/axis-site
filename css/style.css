@@ -21,6 +21,9 @@
   --font-jp: "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif;
   --ease-out: cubic-bezier(.22, 1, .36, 1);
   --header-h: 72px;
+  /* scene journey — tweened by GSAP per chapter */
+  --scene-bg: #080D11;
+  --scene-acc: #6A7CFF;
 }
 
 /* ---------- base ---------- */
@@ -31,7 +34,7 @@ html.lenis { height: auto; scroll-behavior: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 
 body {
-  background: var(--bg0);
+  background: var(--scene-bg);
   color: var(--fg);
   font-family: var(--font-jp);
   font-weight: 400;
@@ -47,7 +50,7 @@ a { color: inherit; text-decoration: none; }
 ul, ol { list-style: none; }
 i { font-style: normal; }
 
-::selection { background: rgba(106, 124, 255, .45); color: #fff; }
+::selection { background: var(--scene-acc); color: #0B1014; }
 
 /* film grain overlay */
 body::after {
@@ -236,21 +239,30 @@ body.menu-open .menu-overlay { opacity: 1; visibility: visible; }
 .scrollnav__fill {
   position: absolute; top: 0; left: 0;
   width: 100%; height: 0%;
-  background: var(--fg);
+  background: var(--scene-acc);
 }
-.scrollnav__cur { color: var(--fg); }
+.scrollnav__cur { color: var(--scene-acc); }
 
-/* ---------- reveal / stagger ---------- */
-.reveal {
-  opacity: 0;
-  transform: translateY(32px);
-  transition: opacity 1s var(--ease-out), transform 1s var(--ease-out);
-  transition-delay: var(--d, 0s);
-}
-.reveal.is-in { opacity: 1; transform: none; }
+/* ---------- motion primitives (states driven by GSAP) ---------- */
+.ch { display: inline-block; }
 @media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; transform: none; transition: none; }
   body::after { animation: none; }
+}
+
+/* ---------- chapter ghost numbers ---------- */
+.sec__ghost {
+  position: absolute;
+  right: 1vw; top: 4%;
+  z-index: 0;
+  font-family: var(--font-en);
+  font-weight: 200;
+  font-size: clamp(140px, 24vw, 360px);
+  line-height: 1;
+  letter-spacing: -.02em;
+  color: var(--scene-acc);
+  opacity: .055;
+  pointer-events: none;
+  user-select: none;
 }
 
 /* ---------- hero ---------- */
@@ -279,10 +291,10 @@ body.menu-open .menu-overlay { opacity: 1; visibility: visible; }
   letter-spacing: -.015em;
 }
 .hero__title .line { display: block; overflow: hidden; }
-.hero__title .line__in {
-  display: inline-block;
-  transform: translateY(112%);
-}
+.hero__title .line__in { display: inline-block; }
+/* pre-JS hide via visibility only — a CSS transform here would get baked into
+   GSAP's pixel-y cache and the yPercent intro could never bring it back */
+.js .hero__title .line__in { visibility: hidden; }
 .hero__lead {
   margin-top: 34px;
   font-size: 16px;
@@ -306,7 +318,7 @@ body.menu-open .menu-overlay { opacity: 1; visibility: visible; }
   color: var(--fg-faint);
   text-transform: uppercase;
 }
-.hero-fade { opacity: 0; }
+.js .hero-fade { opacity: 0; }
 
 .hero__orbit {
   position: absolute;
@@ -337,6 +349,7 @@ body.menu-open .menu-overlay { opacity: 1; visibility: visible; }
   border-bottom: 1px solid var(--line);
 }
 .sec__inner {
+  position: relative; z-index: 1;
   display: grid;
   grid-template-columns: 120px 1fr;
   gap: 32px;
@@ -424,11 +437,10 @@ body.menu-open .menu-overlay { opacity: 1; visibility: visible; }
 .card__fig img {
   width: 100%; height: 100%;
   object-fit: cover;
-  transform: scale(1.02);
-  transition: transform 1s var(--ease-out), filter 1s;
+  transition: filter 1s;
   filter: saturate(.92) brightness(.92);
 }
-.card:hover .card__fig img { transform: scale(1.08); filter: saturate(1) brightness(1); }
+.card:hover .card__fig img { filter: saturate(1) brightness(1.06); }
 .card__head {
   display: flex; align-items: baseline; gap: 14px;
   padding: 26px 26px 0;
@@ -455,7 +467,6 @@ body.menu-open .menu-overlay { opacity: 1; visibility: visible; }
 }
 
 /* ---------- 04 strength ---------- */
-.sec--strength { background: var(--bg1); }
 .strength {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -471,7 +482,7 @@ body.menu-open .menu-overlay { opacity: 1; visibility: visible; }
   stroke-dashoffset: 1;
   transition: stroke-dashoffset 1.6s var(--ease-out) .2s;
 }
-.reveal.is-in .strength__icon .draw { stroke-dashoffset: 0; }
+.strength__item.is-in .strength__icon .draw { stroke-dashoffset: 0; }
 .strength__num {
   display: block;
   font-family: var(--font-en);
@@ -487,21 +498,34 @@ body.menu-open .menu-overlay { opacity: 1; visibility: visible; }
 }
 .strength__body { font-size: 12.5px; color: var(--fg-dim); }
 
-/* ---------- 05 flow ---------- */
+/* ---------- 05 flow (horizontal cinematic scene on desktop) ---------- */
+.flow-clip { overflow: visible; }
 .flow {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 20px;
-  counter-reset: flow;
+  display: flex;
+  gap: 48px;
+  width: max-content;
 }
-.flow__item { position: relative; }
+.flow__item { position: relative; width: clamp(280px, 26vw, 400px); flex: none; }
 .flow__item:not(:last-child)::after {
   content: "→";
   position: absolute;
-  right: -16px; top: 28%;
+  right: -32px; top: 26%;
   font-family: var(--font-en);
   color: var(--fg-faint);
   font-size: 13px;
+}
+@media (min-width: 861px) {
+  #flow {
+    min-height: 100svh;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    overflow: hidden;
+  }
+  #flow .sec__inner { width: 100%; }
+  /* the 1fr grid column must not expand to the track's max-content width */
+  #flow .sec__body { min-width: 0; }
+  #flow .sec__head { margin-bottom: 48px; }
 }
 .flow__fig {
   overflow: hidden;
@@ -538,7 +562,7 @@ body.menu-open .menu-overlay { opacity: 1; visibility: visible; }
   border: 1px solid var(--line);
 }
 .works__fig img {
-  width: 100%; height: 110%;
+  width: 100%; height: 100%;
   object-fit: cover;
   filter: brightness(.85);
   transition: filter .8s;
@@ -552,8 +576,9 @@ body.menu-open .menu-overlay { opacity: 1; visibility: visible; }
 .works__body { margin-top: 10px; font-size: 11.5px; color: var(--fg-dim); }
 
 /* ---------- 07-09 band ---------- */
-.band { padding: 140px 0; border-bottom: 1px solid var(--line); }
+.band { position: relative; padding: 140px 0; border-bottom: 1px solid var(--line); }
 .band__grid {
+  position: relative; z-index: 1;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 28px;
@@ -567,10 +592,10 @@ body.menu-open .menu-overlay { opacity: 1; visibility: visible; }
 }
 .band__bg { position: absolute; inset: 0; }
 .band__bg img {
-  width: 100%; height: 112%;
+  width: 100%; height: 100%;
   object-fit: cover;
   filter: brightness(.75);
-  transition: transform 1.2s var(--ease-out), filter 1.2s;
+  transition: filter 1.2s;
 }
 .band__card:hover .band__bg img { filter: brightness(.9); }
 .band__card--img::before {
@@ -620,8 +645,9 @@ body.menu-open .menu-overlay { opacity: 1; visibility: visible; }
 .band__btn { margin-top: 12px; align-self: flex-start; }
 
 /* ---------- 10 footer ---------- */
-.footer { padding: 120px 0 0; background: var(--bg1); }
+.footer { position: relative; padding: 120px 0 0; border-top: 1px solid var(--line); }
 .footer__inner {
+  position: relative; z-index: 1;
   display: grid;
   grid-template-columns: 1fr 1.6fr .6fr;
   gap: 56px;
@@ -676,8 +702,6 @@ body.menu-open .menu-overlay { opacity: 1; visibility: visible; }
 @media (max-width: 1100px) {
   .cards-3 { grid-template-columns: repeat(3, 1fr); gap: 18px; }
   .strength { grid-template-columns: repeat(2, 1fr); }
-  .flow { grid-template-columns: repeat(3, 1fr); gap: 28px 20px; }
-  .flow__item:nth-child(3n)::after { display: none; }
   .works { grid-template-columns: repeat(3, 1fr); }
   .band__grid { grid-template-columns: 1fr; }
   .band__card { min-height: 420px; }
@@ -696,9 +720,10 @@ body.menu-open .menu-overlay { opacity: 1; visibility: visible; }
   .sec__vertical { display: none; }
   .cards-3 { grid-template-columns: 1fr; gap: 20px; }
   .works { grid-template-columns: repeat(2, 1fr); }
-  .flow { grid-template-columns: repeat(2, 1fr); }
-  .flow__item:nth-child(3n)::after { display: revert; }
-  .flow__item:nth-child(2n)::after { display: none; }
+  .flow { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px 20px; width: auto; }
+  .flow__item { width: auto; }
+  .flow__item::after { display: none !important; }
+  .sec__ghost { font-size: clamp(100px, 30vw, 200px); right: 0; }
   .hero__orbit { right: -12%; top: 8%; width: 64vw; opacity: .4; }
   .hero__desc { flex-direction: column; }
   .footer__inner { grid-template-columns: 1fr; gap: 40px; padding-bottom: 56px; }

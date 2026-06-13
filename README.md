@@ -9,8 +9,8 @@
 
 - 素のHTML / CSS / JS(ビルドなし、CDN読み込み)
 - [Three.js](https://threejs.org/) — ヒーローの薄膜干渉シェーダー(イリデセント・リボン)
-- [anime.js](https://animejs.com/) — テキストリビール / イントロタイムライン
-- [Lenis](https://lenis.darkroom.engineering/) — 慣性スムーススクロール
+- [GSAP + ScrollTrigger](https://gsap.com/) — 章ごとのシネマティックなシーン演出 / カラージャーニー / 横スクロールFLOW
+- [Lenis](https://lenis.darkroom.engineering/) — 慣性スムーススクロール(GSAP ticker統合)
 - 画像アセットは fal.ai (GPT Image 2) で生成(`tools/gen_images.py`)
 
 ## Design tokens
@@ -22,14 +22,17 @@
 | Type (EN) | Inter(カンプの Neue Montreal の代替) |
 | Type (JP) | Noto Sans JP |
 
-## Interactions
+## Interactions (storytelling)
 
-- パララックス(画像・装飾のスクロール速度差)
-- テキストリビール / スクロール連動リビール
-- グラスモーフィズム(ヘッダー・カード・ボタンの backdrop-filter)
-- カスタムカーソル(リンクホバーで拡大、mix-blend-mode: difference)
-- スクロールインジケーター(01→10 セクション同期)
+- 10章構成のストーリーテリング: 章ごとに背景色がモーフする「カラージャーニー」(深黒→インディゴ→ティール→バイオレット→深黒)
+- 章番号のゴーストウォーターマーク(スクラブ・パララックス)
+- 見出しの文字単位リビール、シーン単位のカード入場(ScrollTrigger batch)
+- ヒーローのオープニングタイトルシーケンス+スクロール退場(スクラブ)
+- FLOW章はピン留め横スクロールのトラッキングショット(デスクトップのみ)
+- 画像パララックス(スクラブ)、グラスモーフィズム、カスタムカーソル
+- スクロールインジケーター(01→10 章同期、アクセント色も章に追従)
 - SVG線画アイコンのストロークドローイング
+- prefers-reduced-motion 時は全演出を無効化した静的表示
 
 ## Local
 
