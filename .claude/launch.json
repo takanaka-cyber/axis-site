@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "axis-preview",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["-c", "cd /tmp/axis_preview && exec /usr/bin/python3 -m http.server 8741"],
+      "port": 8741
+    }
+  ]
+}
