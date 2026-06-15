@@ -36,7 +36,13 @@
       document.body.classList.remove('menu-open');
       const btn = document.getElementById('menu-btn');
       if (btn) btn.setAttribute('aria-expanded', 'false');
-      if (lenis) lenis.scrollTo(target, { offset: -headerH, duration: 1.6 });
+      if (lenis) {
+        const anchor = target.parentElement?.classList.contains('pin-spacer')
+          ? target.parentElement
+          : target;
+        const y = anchor.offsetTop - headerH;
+        lenis.scrollTo(Math.max(0, y), { duration: 1.6 });
+      }
       else target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
     });
   });
@@ -120,7 +126,7 @@
       for (let i = 0; i < LINES; i++) {
         const yBase = h * 0.28 + (i / LINES) * h * 0.62;
         const alpha = 0.03 + 0.10 * Math.sin((i / LINES) * Math.PI);
-        ctx.strokeStyle = `rgba(226,232,238,${alpha.toFixed(3)})`;
+        ctx.strokeStyle = `rgba(8,13,17,${alpha.toFixed(3)})`;
         ctx.beginPath();
         for (let x = 0; x <= w; x += STEP) {
           const u = x / w;
@@ -169,17 +175,38 @@
     return out;
   };
 
+  const topScenes = gsap.utils.toArray('main > section, main > footer');
+  const lightScenes = new Set(['concept', 'flow', 'company']);
+  const curtain = document.createElement('div');
+  curtain.className = 'scene-wipe';
+  curtain.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(curtain);
+  let wipeRestTimer = null;
+  const clearWipe = () => {
+    gsap.to(curtain, {
+      opacity: 0,
+      clipPath: 'inset(0 0 100% 0)',
+      duration: 0.22,
+      ease: 'power2.out',
+      overwrite: 'auto',
+    });
+  };
+  window.addEventListener('scroll', () => {
+    window.clearTimeout(wipeRestTimer);
+    wipeRestTimer = window.setTimeout(clearWipe, 180);
+  }, { passive: true });
+
   /* ---------- chapter color journey ---------- */
   // [background, accent] per chapter — deep black → indigo → teal → violet → ember → back
   const SCENES = {
     '01': ['#080D11', '#6A7CFF'],
-    '02': ['#0A111E', '#6A7CFF'],
+    '02': ['#F2F2EE', '#6A7CFF'],
     '03': ['#0C1126', '#6A7CFF'],
     '04': ['#101824', '#00E5C2'],
-    '05': ['#071A1D', '#00E5C2'],
+    '05': ['#F7F6F2', '#00E5C2'],
     '06': ['#0B0F16', '#00E5C2'],
     '07': ['#140D1F', '#FF3D71'],
-    '10': ['#080D11', '#6A7CFF'],
+    '10': ['#F4F3EF', '#6A7CFF'],
   };
   document.querySelectorAll('section[data-sec], footer[data-sec]').forEach((el) => {
     const scene = SCENES[el.dataset.sec];
@@ -198,6 +225,95 @@
           overwrite: 'auto',
         });
       },
+    });
+  });
+
+  /* ---------- full-screen scene wipes + stage entrances ---------- */
+  topScenes.slice(1).forEach((scene) => {
+    const isLight = lightScenes.has(scene.id);
+    ScrollTrigger.create({
+      trigger: scene,
+      start: 'top 108%',
+      end: 'top 8%',
+      scrub: true,
+      onUpdate(self) {
+        const p = self.progress;
+        const reveal = p < 0.52 ? 100 - (p / 0.52) * 100 : 0;
+        const leave = p > 0.52 ? ((p - 0.52) / 0.48) * 100 : 0;
+        const settled = scene.getBoundingClientRect().top <= headerH + 8;
+        curtain.classList.toggle('scene-wipe--light', isLight);
+        gsap.set(curtain, {
+          '--wipe-color': isLight ? '#F3F2EE' : '#05070A',
+          '--wipe-grid-x': `${(p - 0.5) * 12}vw`,
+          '--wipe-grid-y': `${(0.5 - p) * 8}vh`,
+          opacity: settled ? 0 : Math.sin(p * Math.PI) * 0.96,
+          clipPath: settled ? 'inset(0 0 100% 0)' : `inset(${reveal}% 0 ${leave}% 0)`,
+        });
+      },
+      onLeave: () => gsap.set(curtain, { opacity: 0, clipPath: 'inset(0 0 100% 0)' }),
+      onLeaveBack: () => gsap.set(curtain, { opacity: 0, clipPath: 'inset(100% 0 0 0)' }),
+    });
+  });
+
+  const stageMM = gsap.matchMedia();
+  stageMM.add('(min-width: 861px)', () => {
+    topScenes.forEach((scene, i) => {
+      if (scene.id === 'flow') return;
+      if (i > 0) {
+        gsap.fromTo(scene,
+          { clipPath: 'inset(16% 0% 0% 0%)', y: 110, scale: 0.96, filter: 'brightness(0.62) blur(10px)' },
+          {
+            clipPath: 'inset(0% 0% 0% 0%)',
+            y: 0,
+            scale: 1,
+            filter: 'brightness(1) blur(0px)',
+            ease: 'none',
+            scrollTrigger: { trigger: scene, start: 'top bottom', end: 'top 24%', scrub: true },
+          });
+      }
+    });
+
+    gsap.to('#top', {
+      '--axis-x': '14vw',
+      '--axis-y': '-18vh',
+      '--axis-scale': 1.32,
+      '--dust-x': '-10vw',
+      '--dust-y': '22vh',
+      '--dust-scale': 1.22,
+      ease: 'none',
+      scrollTrigger: { trigger: '#top', start: 'top top', end: 'bottom top', scrub: true },
+    });
+    gsap.to('#concept', {
+      '--ink-x': '-10vw',
+      '--ink-y': '12vh',
+      '--ink-scale': 1.22,
+      ease: 'none',
+      scrollTrigger: { trigger: '#concept', start: 'top bottom', end: 'bottom top', scrub: true },
+    });
+    gsap.to('#services', {
+      '--cards-y': '-14vh',
+      ease: 'none',
+      scrollTrigger: { trigger: '#services', start: 'top bottom', end: 'bottom top', scrub: true },
+    });
+    gsap.to('#strength', {
+      '--strength-grid-x': '-10vw',
+      ease: 'none',
+      scrollTrigger: { trigger: '#strength', start: 'top bottom', end: 'bottom top', scrub: true },
+    });
+    gsap.to('#flow', {
+      '--flow-wave-x': '-10vw',
+      ease: 'none',
+      scrollTrigger: { trigger: '#flow', start: 'top bottom', end: 'bottom top', scrub: true },
+    });
+    gsap.to('#works', {
+      '--works-drift': '12vw',
+      ease: 'none',
+      scrollTrigger: { trigger: '#works', start: 'top bottom', end: 'bottom top', scrub: true },
+    });
+    gsap.to('#philosophy', {
+      '--band-shift': '-12vw',
+      ease: 'none',
+      scrollTrigger: { trigger: '#philosophy', start: 'top bottom', end: 'bottom top', scrub: true },
     });
   });
 
